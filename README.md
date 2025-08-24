@@ -1,7 +1,5 @@
 ![](pokedex-banner.png)
 
-# 🔴 Pokédex React App
-
 This is a **personal fan project** created to celebrate and showcase my passion for Pokémon. A modern, interactive Pokédex built with React that brings the world of Pokémon to your browser!
 
 All Pokémon data and images are fetched live from the amazing [PokeAPI](https://pokeapi.co/).
