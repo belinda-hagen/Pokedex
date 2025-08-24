@@ -1,0 +1,83 @@
+
+.music-player-icon {
+  position: fixed !important;
+  bottom: 40px !important; 
+  right: 20px !important;
+  left: auto !important;
+  z-index: 1000;
+  background: linear-gradient(180deg, #ff3838 0%, #ff3838 48%, #2a2a2a 48%, #2a2a2a 52%, #ffffff 52%, #ffffff 100%);
+  border-radius: 50%;
+  box-shadow: 
+    0 0 0 4px #1a1a1a,
+    0 6px 20px rgba(0, 0, 0, 0.3),
+    inset 0 2px 4px rgba(255, 255, 255, 0.2),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+  width: 64px;
+  height: 64px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  transform: translateZ(0); /* Force hardware acceleration and proper positioning */
+}
+
+.music-player-icon::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  background: radial-gradient(circle, #ffffff 0%, #e0e0e0 30%, #cccccc 70%, #999999 100%);
+  border-radius: 50%;
+  border: 3px solid #1a1a1a;
+  box-shadow: 
+    inset 0 1px 2px rgba(255, 255, 255, 0.8),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.2);
+  z-index: 2;
+}
+
+.music-player-icon::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  background: radial-gradient(circle, #666666 0%, #333333 100%);
+  border-radius: 50%;
+  z-index: 3;
+}
+
+.music-player-icon:hover {
+  background: linear-gradient(180deg, #ff5555 0%, #ff5555 48%, #2a2a2a 48%, #2a2a2a 52%, #ffffff 52%, #ffffff 100%);
+  transform: scale(1.1) rotate(10deg);
+  box-shadow: 
+    0 0 0 4px #ff3838,
+    0 10px 30px rgba(255, 56, 56, 0.4),
+    inset 0 2px 6px rgba(255, 255, 255, 0.3),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.3);
+  filter: brightness(1.1);
+}
+
+.music-player-icon svg {
+  color: #1a1a1a;
+  font-size: 24px;
+  filter: drop-shadow(0 1px 2px rgba(255, 255, 255, 0.8));
+  transition: all 0.3s ease;
+  z-index: 4;
+  position: relative;
+}
+
+.music-player-icon:hover svg {
+  color: #0066cc;
+  filter: drop-shadow(0 0 8px rgba(0, 102, 204, 0.6));
+  transform: scale(1.1);
+}
