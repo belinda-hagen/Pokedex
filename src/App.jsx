@@ -18,7 +18,8 @@ function App() {
   const [allError, setAllError] = useState("");
   const [page, setPage] = useState(0);
   const perPage = 60; 
-  const [splashLoader, setSplashLoader] = useState(true); 
+  const [splashLoader, setSplashLoader] = useState(true);
+  const [isMainCardHovered, setIsMainCardHovered] = useState(false); 
 
   useEffect(() => {
     const timer = setTimeout(() => setSplashLoader(false), 1500);
@@ -259,14 +260,33 @@ function App() {
             >
               ← Back to List
             </button>
-            <div className="pokemon-card" onClick={handleCardClick} style={{ cursor: 'pointer' }}>
+            <div 
+              className="pokemon-card" 
+              onClick={handleCardClick} 
+              style={{ cursor: 'pointer' }}
+              onMouseEnter={() => setIsMainCardHovered(true)}
+              onMouseLeave={() => setIsMainCardHovered(false)}
+            >
               <img
-                src={pokemon.sprites?.other?.home?.front_default || pokemon.sprites?.other?.['official-artwork']?.front_default || pokemon.sprites?.front_default}
-                alt={pokemon.name}
-                style={{ width: '96px', height: '96px' }}
+                src={
+                  isMainCardHovered 
+                    ? pokemon.sprites?.other?.home?.front_shiny || pokemon.sprites?.other?.['official-artwork']?.front_shiny || pokemon.sprites?.front_shiny || pokemon.sprites?.other?.home?.front_default || pokemon.sprites?.other?.['official-artwork']?.front_default || pokemon.sprites?.front_default
+                    : pokemon.sprites?.other?.home?.front_default || pokemon.sprites?.other?.['official-artwork']?.front_default || pokemon.sprites?.front_default
+                }
+                alt={`${pokemon.name}${isMainCardHovered ? ' (shiny)' : ''}`}
+                style={{ 
+                  width: '96px', 
+                  height: '96px',
+                  transition: 'transform 0.3s ease, filter 0.3s ease',
+                  transform: isMainCardHovered ? 'scale(1.05)' : 'scale(1)',
+                  filter: isMainCardHovered ? 'brightness(1.1) contrast(1.1)' : 'none'
+                }}
               />
               <h2 style={{ textTransform: 'capitalize' }}>{pokemon.name}</h2>
-              <p>ID: {pokemon.id}</p>
+              <p>
+                ID: {pokemon.id}
+                {isMainCardHovered && <span style={{ color: '#ffd700', marginLeft: '8px', fontSize: '0.9em' }}>✨ Shiny</span>}
+              </p>
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                 {pokemon.types.map(t => (
                   <span
@@ -383,27 +403,54 @@ function App() {
 
 // Summary card for all pokemons 
 function PokemonCardSummary({ name, url, onClick }) {
+  const [isHovered, setIsHovered] = React.useState(false);
   const id = url.split('/').filter(Boolean).pop();
+  
+  // Normal sprites
   const sprite3D = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${id}.png`;
   const officialArt = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
   const staticUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
   
+  // Shiny sprites
+  const shinySprite3D = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/${id}.png`;
+  const shinyOfficialArt = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/${id}.png`;
+  const shinyStaticUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${id}.png`;
+  
+  const currentSprite = isHovered ? shinySprite3D : sprite3D;
+  const currentOfficialArt = isHovered ? shinyOfficialArt : officialArt;
+  const currentStaticUrl = isHovered ? shinyStaticUrl : staticUrl;
+  
   return (
-    <div className="pokemon-card" onClick={onClick} style={{ cursor: 'pointer' }}>
+    <div 
+      className="pokemon-card" 
+      onClick={onClick} 
+      style={{ cursor: 'pointer' }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <img 
-        src={sprite3D}
-        alt={name} 
-        style={{ width: '96px', height: '96px' }}
+        src={currentSprite}
+        alt={`${name}${isHovered ? ' (shiny)' : ''}`} 
+        style={{ 
+          width: '96px', 
+          height: '96px',
+          transition: 'transform 0.3s ease, filter 0.3s ease',
+          transform: isHovered ? 'scale(1.05)' : 'scale(1)',
+          filter: isHovered ? 'brightness(1.1) contrast(1.1)' : 'none'
+        }}
         onError={(e) => {
           if (e.target.src.includes('home')) {
-            e.target.src = officialArt;
+            e.target.src = currentOfficialArt;
           } else if (e.target.src.includes('official-artwork')) {
-            e.target.src = staticUrl;
+            e.target.src = currentStaticUrl;
           }
         }}
       />
       <h2 style={{ textTransform: 'capitalize' }}>{name}</h2>
-      <p style={{ color: '#888', fontWeight: 500 }}>ID: {id}</p>
+      <p style={{ color: '#888', fontWeight: 500 }}>
+        ID: {id}
+        {isHovered && <span style={{ color: '#ffd700', marginLeft: '8px', fontSize: '0.9em' }}>✨ Shiny</span>}
+      </p>
     </div>
   );
 }
