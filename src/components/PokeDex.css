@@ -50,11 +50,20 @@ html, body, #root {
 }
 
 .pokedex-logo {
-  height: 130px;
-  width: auto;
-  display: block;
-  margin: -10px auto 0 auto;
-  filter: drop-shadow(0 2px 0 rgba(0,0,0,0.25));
+    height: 160px;
+    width: auto;
+    display: block;
+    margin: -16px auto 0 auto; 
+    filter: drop-shadow(0 2px 0 rgba(0,0,0,0.25));
+}
+
+/* Responsive logo sizing */
+@media (max-width: 768px) {
+    .pokedex-logo { height: 140px; margin-top: -12px; }
+}
+
+@media (max-width: 480px) {
+    .pokedex-logo { height: 110px; margin-top: -8px; }
 }
 
 .three-dots-grid {

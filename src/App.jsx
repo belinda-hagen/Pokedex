@@ -153,7 +153,7 @@ function App() {
             <div></div>
             <div></div>
           </div>
-          <img src="/img/pokedex-logo.png" alt="Pokedex Logo" className="pokedex-logo" />
+          <img src="/img/pokemon-logo-new.png" alt="Pokedex Logo" className="pokedex-logo" />
         </div>
         <div className="search-bar">
           <input

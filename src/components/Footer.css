@@ -1,7 +1,7 @@
 footer{
     width: min(1100px, 92vw);
     margin: 24px auto 24px;
-    background: rgba(190, 28, 28, 0.95);
+    background: linear-gradient(135deg, #be1c1c, #dd3232);
     color: white;
     text-align: center;
     padding: 16px 20px 20px;
