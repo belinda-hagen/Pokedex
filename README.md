@@ -1,59 +1,87 @@
-![](pokedex-banner-new.png)
+<div align="center">
 
-This is a **personal fan project** created to celebrate and showcase my passion for Pokémon. A modern, interactive Pokédex built with React that brings the world of Pokémon to your browser!
+<img src="pokedex-banner-new.png" width="100%" />
 
-All Pokémon data and images are fetched live from the amazing [PokeAPI](https://pokeapi.co/).
+# 🎒 Pokédex — React Edition 🎒
+
+*A fan-made, interactive Pokédex built with love, curiosity, and a sprinkle of nostalgia.*  
+Explore Pokémon, view stats, discover typings, and relive the magic — right in your browser!
+
+</div>
+
+---
+
+## 🔥 Features
+
+- 🧭 Search & browse the full National Pokédex
+- 🌈 Type badges styled with iconic Pokémon color themes
+- 📊 Detailed stat breakdowns for each Pokémon
+- 🖼️ Official Pokémon artwork fetched in real-time
+- ⚡ Fast user experience powered by Vite + React
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Frontend Framework:** React.js (v19.1.0)
-- **Icons:** React Icons (v5.5.0)
-- **Styling:** CSS (vanilla CSS files)
-- **Build Tool:** Vite (v7.0.4)
-- **Code Quality:** ESLint (v9.30.1)
-- **API:** PokeAPI for live Pokémon data
+| Technology | Purpose |
+|-----------|---------|
+| **React (v19.1.0)** | UI rendering and components |
+| **Vite (v7.0.4)** | Fast development environment |
+| **CSS** | Styling and layout |
+| **React Icons (v5.5.0)** | UI iconography |
+| **ESLint (v9.30.1)** | Code formatting & linting |
+| **PokeAPI** | Live Pokémon data |
 
 ---
 
 ## 🚀 Getting Started
 
-### Prerequisites
-- Node.js (v16 or higher)
+### ✅ Requirements
+- Node.js **v16+**
 - npm or yarn
 
-### Installation
+### 📦 Installation
 
-1. **Clone the repository**
 ```bash
+# 1. Clone the repository
 git clone https://github.com/belinda-hagen/Pokedex.git
-```
 
-2. **Navigate to project directory**
-```bash
+# 2. Move into the project folder
 cd Pokedex
-```
 
-3. **Install dependencies**
-```bash
+# 3. Install dependencies
 npm install
-```
 
-4. **Start the development server**
-```bash
+# 4. Start the development server
 npm run dev
 ```
 
+## 🌐 API Data Sources
+
+This project uses **PokeAPI** to fetch:
+
+- Pokémon names and ID numbers
+- Official artwork
+- Type information & weaknesses
+- Base stats & detailed attributes
+- Full Pokédex data across all generations
+
+API: https://pokeapi.co/
+
 ---
 
-## 🌐 API Integration
+## 💌 Disclaimer
 
-This project uses the [PokeAPI](https://pokeapi.co/) to fetch:
-- Pokémon basic information (name, ID, types)
-- High-resolution official artwork
-- Detailed stats and characteristics
-- Complete Pokédex data for all generations
+This is a **personal fan project**, made purely for fun and learning.  
+Pokémon and all related content are trademarks of **Nintendo, Game Freak, and The Pokémon Company**.
 
+---
 
+<div align="center">
 
+### ⭐ Enjoying the project?
+
+If you like this project, consider giving it a **star** — it helps a lot!  
+Now go catch 'em all! ⚡🎮
+
+</div>
