@@ -22,6 +22,7 @@ function App() {
   const [isMainCardHovered, setIsMainCardHovered] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   
   const [megaForms, setMegaForms] = useState([]);
   const [megaData, setMegaData] = useState({});
@@ -91,6 +92,18 @@ function App() {
     const timer = setTimeout(() => setSplashLoader(false), 1500);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   useEffect(() => {
     async function fetchAll() {
@@ -293,10 +306,14 @@ function App() {
         {loading && <div>Loading...</div>}
         {error && (search || pokemon) && <div style={{ color: 'red' }}>{error}</div>}
         {!search && !pokemon && (() => {
-          const filteredPokemons = allPokemons.filter(poke => !shouldFilterPokemon(poke.name));
+          let filteredPokemons = allPokemons.filter(poke => !shouldFilterPokemon(poke.name));
+          
           return (
           <>
             {allError && <div style={{ color: 'red' }}>{allError}</div>}
+            {filteredPokemons.length === 0 && !allError && (
+              <div className="no-results">No Pokémon found with these filters.</div>
+            )}
             {filteredPokemons.length > 0 && filteredPokemons.slice(page * perPage, (page + 1) * perPage).map((poke) => (
               <PokemonCardSummary key={poke.name} name={poke.name} url={poke.url} megaDimensionMode={megaDimensionMode} onClick={async () => {
                 setLoading(true);
@@ -576,6 +593,13 @@ function App() {
           </div>
         );
       })()}
+      
+      {showScrollTop && (
+        <button className="scroll-top-btn" onClick={scrollToTop} title="Back to top">
+          ↑
+        </button>
+      )}
+      
       <MusicPlayer />
       <Footer />
     </>
