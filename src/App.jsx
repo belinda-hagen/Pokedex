@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getPokemon } from './api/pokeapi';
+import { getPokemon, getMegaForms, getMegaEvolutionData, getMegaDisplayName } from './api/pokeapi';
 import './components/PokeDex.css';
 import './components/Footer.css';
 import './components/MusicPlayer.css';
@@ -19,7 +19,50 @@ function App() {
   const [page, setPage] = useState(0);
   const perPage = 60; 
   const [splashLoader, setSplashLoader] = useState(true);
-  const [isMainCardHovered, setIsMainCardHovered] = useState(false); 
+  const [isMainCardHovered, setIsMainCardHovered] = useState(false);
+  
+  // Mega Evolution states
+  const [megaForms, setMegaForms] = useState([]);
+  const [megaData, setMegaData] = useState({});
+  const [selectedForm, setSelectedForm] = useState('base'); // 'base' or mega form name
+  const [loadingMega, setLoadingMega] = useState(false);
+
+  // Fetch mega evolution data when a pokemon is selected
+  useEffect(() => {
+    if (!pokemon) {
+      setMegaForms([]);
+      setMegaData({});
+      setSelectedForm('base');
+      return;
+    }
+    
+    const forms = getMegaForms(pokemon.name);
+    if (!forms) {
+      setMegaForms([]);
+      setMegaData({});
+      setSelectedForm('base');
+      return;
+    }
+    
+    setMegaForms(forms);
+    setSelectedForm('base');
+    
+    // Fetch all mega form data
+    const fetchMegaData = async () => {
+      setLoadingMega(true);
+      const dataMap = {};
+      for (const formName of forms) {
+        const data = await getMegaEvolutionData(formName);
+        if (data) {
+          dataMap[formName] = data;
+        }
+      }
+      setMegaData(dataMap);
+      setLoadingMega(false);
+    };
+    
+    fetchMegaData();
+  }, [pokemon]);
 
   useEffect(() => {
     const timer = setTimeout(() => setSplashLoader(false), 1500);
@@ -171,10 +214,12 @@ function App() {
         {loading && <div>Loading...</div>}
         {error && (search || pokemon) && <div style={{ color: 'red' }}>{error}</div>}
         {/* Show all pokemons if no search and no single pokemon selected */}
-        {!search && !pokemon && (
+        {!search && !pokemon && (() => {
+          const filteredPokemons = allPokemons.filter(poke => !poke.name.toLowerCase().includes('mega'));
+          return (
           <>
             {allError && <div style={{ color: 'red' }}>{allError}</div>}
-            {allPokemons.length > 0 && allPokemons.slice(page * perPage, (page + 1) * perPage).map((poke) => (
+            {filteredPokemons.length > 0 && filteredPokemons.slice(page * perPage, (page + 1) * perPage).map((poke) => (
               <PokemonCardSummary key={poke.name} name={poke.name} url={poke.url} onClick={async () => {
                 setLoading(true);
                 setError("");
@@ -190,8 +235,8 @@ function App() {
               }} />
             ))}
             {/* Enhanced Pagination controls */}
-            {allPokemons.length > 0 && (() => {
-              const totalPages = Math.max(1, Math.ceil(allPokemons.length / perPage));
+            {filteredPokemons.length > 0 && (() => {
+              const totalPages = Math.max(1, Math.ceil(filteredPokemons.length / perPage));
               if (page < 0) setPage(0);
               if (page > totalPages - 1) setPage(totalPages - 1);
               return (
@@ -250,7 +295,7 @@ function App() {
               );
             })()}
           </>
-        )}
+        );})()}
         {/* Always show single searched or selected pokemon if set */}
         {pokemon && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -313,13 +358,17 @@ function App() {
 
       {/* Modal popup for detailed info */}
       {showInfo && pokemon && (() => {
-        const primaryType = pokemon.types[0]?.type?.name;
+        // Determine which pokemon data to display (base or mega form)
+        const displayPokemon = selectedForm === 'base' ? pokemon : (megaData[selectedForm] || pokemon);
+        const primaryType = displayPokemon.types[0]?.type?.name;
         const typeColor = typeColors[primaryType] || '#be1c1c';
         const pct = (n) => `${Math.min(100, Math.round((n / 200) * 100))}%`;
+        const hasMegaEvolutions = megaForms.length > 0;
+        
         return (
           <div className="modal-overlay" onClick={handleCloseInfo}>
             <div
-              className="modal-card enhanced"
+              className={`modal-card enhanced ${selectedForm !== 'base' ? 'mega-active' : ''}`}
               style={{ border: `4px solid ${typeColor}`, '--type-color': typeColor }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -331,17 +380,20 @@ function App() {
               </div>
 
               <div className="modal-header">
-                <div className="modal-hero">
+                <div className={`modal-hero ${selectedForm !== 'base' ? 'mega-hero' : ''}`}>
                   <img
-                    src={pokemon.sprites?.other?.home?.front_default || pokemon.sprites?.other?.['official-artwork']?.front_default || pokemon.sprites?.front_default}
-                    alt={pokemon.name}
-                    className="modal-sprite"
+                    src={displayPokemon.sprites?.other?.home?.front_default || displayPokemon.sprites?.other?.['official-artwork']?.front_default || displayPokemon.sprites?.front_default}
+                    alt={displayPokemon.name}
+                    className={`modal-sprite ${selectedForm !== 'base' ? 'mega-sprite' : ''}`}
                   />
                 </div>
-                <h2 className="modal-title">{pokemon.name}</h2>
+                <h2 className="modal-title">
+                  {selectedForm === 'base' ? pokemon.name : displayPokemon.name.replace('-', ' ').replace('mega', 'Mega')}
+                  {selectedForm !== 'base' && <span className="mega-badge">MEGA</span>}
+                </h2>
                 <p className="modal-subtitle">No. {pokemon.id}</p>
                 <div className="type-chips">
-                  {pokemon.types.map((t) => (
+                  {displayPokemon.types.map((t) => (
                     <span
                       key={t.type.name}
                       className="type-chip"
@@ -353,18 +405,45 @@ function App() {
                 </div>
               </div>
 
+              {/* Mega Evolution Form Selector */}
+              {hasMegaEvolutions && (
+                <section className="section mega-section">
+                  <h3 className="section-title mega-title">
+                    <span className="mega-icon">💎</span> Mega Evolution
+                  </h3>
+                  <div className="mega-form-selector">
+                    <button 
+                      className={`mega-form-btn ${selectedForm === 'base' ? 'active' : ''}`}
+                      onClick={() => setSelectedForm('base')}
+                    >
+                      Base Form
+                    </button>
+                    {megaForms.map(formName => (
+                      <button
+                        key={formName}
+                        className={`mega-form-btn mega ${selectedForm === formName ? 'active' : ''}`}
+                        onClick={() => setSelectedForm(formName)}
+                        disabled={!megaData[formName] && loadingMega}
+                      >
+                        {loadingMega && !megaData[formName] ? '...' : getMegaDisplayName(formName)}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
+
               <div className="info-grid">
-                <div className="info-item"><span>Height</span><strong>{(pokemon.height / 10).toFixed(1)} m</strong></div>
-                <div className="info-item"><span>Weight</span><strong>{(pokemon.weight / 10).toFixed(1)} kg</strong></div>
-                {typeof pokemon.base_experience === 'number' && (
-                  <div className="info-item"><span>Base XP</span><strong>{pokemon.base_experience}</strong></div>
+                <div className="info-item"><span>Height</span><strong>{(displayPokemon.height / 10).toFixed(1)} m</strong></div>
+                <div className="info-item"><span>Weight</span><strong>{(displayPokemon.weight / 10).toFixed(1)} kg</strong></div>
+                {typeof displayPokemon.base_experience === 'number' && (
+                  <div className="info-item"><span>Base XP</span><strong>{displayPokemon.base_experience}</strong></div>
                 )}
               </div>
 
               <section className="section">
                 <h3 className="section-title">Abilities</h3>
                 <div className="ability-badges">
-                  {pokemon.abilities && pokemon.abilities.map((a) => (
+                  {displayPokemon.abilities && displayPokemon.abilities.map((a) => (
                     <span
                       key={a.ability.name}
                       className={"ability-badge" + (a.is_hidden ? " hidden" : "")}
@@ -379,7 +458,7 @@ function App() {
               <section className="section">
                 <h3 className="section-title">Stats</h3>
                 <ul className="stat-list">
-                  {pokemon.stats && pokemon.stats.map((s) => (
+                  {displayPokemon.stats && displayPokemon.stats.map((s) => (
                     <li key={s.stat.name} className="stat-row">
                       <span className="stat-label">{s.stat.name.replace('-', ' ')}</span>
                       <div className="stat-bar">
