@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getPokemon, getMegaForms, getMegaEvolutionData, getMegaDisplayName } from './api/pokeapi';
+import { getPokemon, getMegaForms, getMegaEvolutionData, getMegaDisplayName, getGmaxForms, getGmaxEvolutionData, getGmaxDisplayName, shouldFilterPokemon } from './api/pokeapi';
 import './components/PokeDex.css';
 import './components/Footer.css';
 import './components/MusicPlayer.css';
@@ -20,48 +20,71 @@ function App() {
   const perPage = 60; 
   const [splashLoader, setSplashLoader] = useState(true);
   const [isMainCardHovered, setIsMainCardHovered] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   
-  // Mega Evolution states
   const [megaForms, setMegaForms] = useState([]);
   const [megaData, setMegaData] = useState({});
-  const [selectedForm, setSelectedForm] = useState('base'); // 'base' or mega form name
+  const [gmaxForms, setGmaxForms] = useState([]);
+  const [gmaxData, setGmaxData] = useState({});
+  const [selectedForm, setSelectedForm] = useState('base');
   const [loadingMega, setLoadingMega] = useState(false);
+  const [loadingGmax, setLoadingGmax] = useState(false);
+  const [megaDimensionMode, setMegaDimensionMode] = useState(false);
 
-  // Fetch mega evolution data when a pokemon is selected
   useEffect(() => {
     if (!pokemon) {
       setMegaForms([]);
       setMegaData({});
+      setGmaxForms([]);
+      setGmaxData({});
       setSelectedForm('base');
       return;
     }
     
-    const forms = getMegaForms(pokemon.name);
-    if (!forms) {
+    const megas = getMegaForms(pokemon.name);
+    if (megas) {
+      setMegaForms(megas);
+      const fetchMegaData = async () => {
+        setLoadingMega(true);
+        const dataMap = {};
+        for (const formName of megas) {
+          const data = await getMegaEvolutionData(formName);
+          if (data) {
+            dataMap[formName] = data;
+          }
+        }
+        setMegaData(dataMap);
+        setLoadingMega(false);
+      };
+      fetchMegaData();
+    } else {
       setMegaForms([]);
       setMegaData({});
-      setSelectedForm('base');
-      return;
     }
     
-    setMegaForms(forms);
-    setSelectedForm('base');
-    
-    // Fetch all mega form data
-    const fetchMegaData = async () => {
-      setLoadingMega(true);
-      const dataMap = {};
-      for (const formName of forms) {
-        const data = await getMegaEvolutionData(formName);
-        if (data) {
-          dataMap[formName] = data;
+    const gmaxs = getGmaxForms(pokemon.name);
+    if (gmaxs) {
+      setGmaxForms(gmaxs);
+      const fetchGmaxData = async () => {
+        setLoadingGmax(true);
+        const dataMap = {};
+        for (const formName of gmaxs) {
+          const data = await getGmaxEvolutionData(formName);
+          if (data) {
+            dataMap[formName] = data;
+          }
         }
-      }
-      setMegaData(dataMap);
-      setLoadingMega(false);
-    };
+        setGmaxData(dataMap);
+        setLoadingGmax(false);
+      };
+      fetchGmaxData();
+    } else {
+      setGmaxForms([]);
+      setGmaxData({});
+    }
     
-    fetchMegaData();
+    setSelectedForm('base');
   }, [pokemon]);
 
   useEffect(() => {
@@ -109,8 +132,38 @@ function App() {
   };
 
   const handleInput = (e) => {
-    setSearch(e.target.value);
-    if (error) setError(""); 
+    const value = e.target.value;
+    setSearch(value);
+    if (error) setError("");
+    
+    if (value.trim().length >= 2) {
+      const filtered = allPokemons
+        .filter(poke => !shouldFilterPokemon(poke.name))
+        .filter(poke => poke.name.toLowerCase().includes(value.toLowerCase()))
+        .slice(0, 8);
+      setSuggestions(filtered);
+      setShowSuggestions(filtered.length > 0);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleSuggestionClick = async (pokeName) => {
+    setShowSuggestions(false);
+    setSearch("");
+    setSuggestions([]);
+    setLoading(true);
+    setError("");
+    try {
+      const data = await getPokemon(pokeName);
+      setPokemon(data);
+      setShowInfo(true);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSearch = async () => {
@@ -199,28 +252,53 @@ function App() {
           <img src="/img/pokemon-logo-new.png" alt="Pokedex Logo" className="pokedex-logo" />
         </div>
         <div className="search-bar">
-          <input
-            type="text"
-            placeholder="Search for a Pokémon..."
-            value={search}
-            onChange={handleInput}
-            onKeyDown={handleKeyDown}
-          />
+          <div className="search-input-wrapper">
+            <input
+              type="text"
+              placeholder="Search for a Pokémon..."
+              value={search}
+              onChange={handleInput}
+              onKeyDown={handleKeyDown}
+              onFocus={() => search.trim().length >= 2 && suggestions.length > 0 && setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+            />
+            {showSuggestions && suggestions.length > 0 && (
+              <ul className="search-suggestions">
+                {suggestions.map((poke) => {
+                  const id = poke.url.split('/').filter(Boolean).pop();
+                  return (
+                    <li 
+                      key={poke.name} 
+                      onClick={() => handleSuggestionClick(poke.name)}
+                      className="suggestion-item"
+                    >
+                      <img 
+                        src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`}
+                        alt={poke.name}
+                        className="suggestion-sprite"
+                      />
+                      <span style={{ textTransform: 'capitalize' }}>{poke.name.replace(/-/g, ' ')}</span>
+                      <span className="suggestion-id">#{id}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
           <button onClick={handleSearch}>Search</button>
         </div>
       </div>
 
-      <div className="pokemon-grid">
+      <div className={`pokemon-grid ${megaDimensionMode ? 'mega-dimension' : ''}`}>
         {loading && <div>Loading...</div>}
         {error && (search || pokemon) && <div style={{ color: 'red' }}>{error}</div>}
-        {/* Show all pokemons if no search and no single pokemon selected */}
         {!search && !pokemon && (() => {
-          const filteredPokemons = allPokemons.filter(poke => !poke.name.toLowerCase().includes('mega'));
+          const filteredPokemons = allPokemons.filter(poke => !shouldFilterPokemon(poke.name));
           return (
           <>
             {allError && <div style={{ color: 'red' }}>{allError}</div>}
             {filteredPokemons.length > 0 && filteredPokemons.slice(page * perPage, (page + 1) * perPage).map((poke) => (
-              <PokemonCardSummary key={poke.name} name={poke.name} url={poke.url} onClick={async () => {
+              <PokemonCardSummary key={poke.name} name={poke.name} url={poke.url} megaDimensionMode={megaDimensionMode} onClick={async () => {
                 setLoading(true);
                 setError("");
                 try {
@@ -234,7 +312,6 @@ function App() {
                 }
               }} />
             ))}
-            {/* Enhanced Pagination controls */}
             {filteredPokemons.length > 0 && (() => {
               const totalPages = Math.max(1, Math.ceil(filteredPokemons.length / perPage));
               if (page < 0) setPage(0);
@@ -296,7 +373,7 @@ function App() {
             })()}
           </>
         );})()}
-        {/* Always show single searched or selected pokemon if set */}
+
         {pokemon && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <button
@@ -356,19 +433,36 @@ function App() {
         )}
       </div>
 
-      {/* Modal popup for detailed info */}
       {showInfo && pokemon && (() => {
-        // Determine which pokemon data to display (base or mega form)
-        const displayPokemon = selectedForm === 'base' ? pokemon : (megaData[selectedForm] || pokemon);
+        const isMegaForm = megaForms.includes(selectedForm);
+        const isGmaxForm = gmaxForms.includes(selectedForm);
+        let displayPokemon = pokemon;
+        if (isMegaForm && megaData[selectedForm]) {
+          displayPokemon = megaData[selectedForm];
+        } else if (isGmaxForm && gmaxData[selectedForm]) {
+          displayPokemon = gmaxData[selectedForm];
+        }
         const primaryType = displayPokemon.types[0]?.type?.name;
         const typeColor = typeColors[primaryType] || '#be1c1c';
         const pct = (n) => `${Math.min(100, Math.round((n / 200) * 100))}%`;
         const hasMegaEvolutions = megaForms.length > 0;
+        const hasGmaxEvolutions = gmaxForms.length > 0;
+        const hasSpecialForms = hasMegaEvolutions || hasGmaxEvolutions;
+        
+        let displayName = pokemon.name;
+        let badgeText = null;
+        if (isMegaForm) {
+          displayName = displayPokemon.name.replace(/-/g, ' ').replace(/mega/gi, 'Mega');
+          badgeText = 'MEGA';
+        } else if (isGmaxForm) {
+          displayName = displayPokemon.name.replace(/-gmax/gi, ' (G-Max)').replace(/-/g, ' ');
+          badgeText = 'G-MAX';
+        }
         
         return (
           <div className="modal-overlay" onClick={handleCloseInfo}>
             <div
-              className={`modal-card enhanced ${selectedForm !== 'base' ? 'mega-active' : ''}`}
+              className={`modal-card enhanced ${selectedForm !== 'base' ? (isGmaxForm ? 'gmax-active' : 'mega-active') : ''}`}
               style={{ border: `4px solid ${typeColor}`, '--type-color': typeColor }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -380,16 +474,16 @@ function App() {
               </div>
 
               <div className="modal-header">
-                <div className={`modal-hero ${selectedForm !== 'base' ? 'mega-hero' : ''}`}>
+                <div className={`modal-hero ${isMegaForm ? 'mega-hero' : ''} ${isGmaxForm ? 'gmax-hero' : ''}`}>
                   <img
                     src={displayPokemon.sprites?.other?.home?.front_default || displayPokemon.sprites?.other?.['official-artwork']?.front_default || displayPokemon.sprites?.front_default}
                     alt={displayPokemon.name}
-                    className={`modal-sprite ${selectedForm !== 'base' ? 'mega-sprite' : ''}`}
+                    className={`modal-sprite ${isMegaForm ? 'mega-sprite' : ''} ${isGmaxForm ? 'gmax-sprite' : ''}`}
                   />
                 </div>
                 <h2 className="modal-title">
-                  {selectedForm === 'base' ? pokemon.name : displayPokemon.name.replace('-', ' ').replace('mega', 'Mega')}
-                  {selectedForm !== 'base' && <span className="mega-badge">MEGA</span>}
+                  {displayName}
+                  {badgeText && <span className={`mega-badge ${isGmaxForm ? 'gmax-badge' : ''}`}>{badgeText}</span>}
                 </h2>
                 <p className="modal-subtitle">No. {pokemon.id}</p>
                 <div className="type-chips">
@@ -405,11 +499,10 @@ function App() {
                 </div>
               </div>
 
-              {/* Mega Evolution Form Selector */}
-              {hasMegaEvolutions && (
+              {hasSpecialForms && (
                 <section className="section mega-section">
                   <h3 className="section-title mega-title">
-                    <span className="mega-icon">💎</span> Mega Evolution
+                    Special Forms
                   </h3>
                   <div className="mega-form-selector">
                     <button 
@@ -426,6 +519,16 @@ function App() {
                         disabled={!megaData[formName] && loadingMega}
                       >
                         {loadingMega && !megaData[formName] ? '...' : getMegaDisplayName(formName)}
+                      </button>
+                    ))}
+                    {gmaxForms.map(formName => (
+                      <button
+                        key={formName}
+                        className={`mega-form-btn gmax ${selectedForm === formName ? 'active' : ''}`}
+                        onClick={() => setSelectedForm(formName)}
+                        disabled={!gmaxData[formName] && loadingGmax}
+                      >
+                        {loadingGmax && !gmaxData[formName] ? '...' : getGmaxDisplayName(formName)}
                       </button>
                     ))}
                   </div>
@@ -480,17 +583,14 @@ function App() {
 }
 
 
-// Summary card for all pokemons 
 function PokemonCardSummary({ name, url, onClick }) {
   const [isHovered, setIsHovered] = React.useState(false);
   const id = url.split('/').filter(Boolean).pop();
   
-  // Normal sprites
   const sprite3D = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${id}.png`;
   const officialArt = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
   const staticUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
   
-  // Shiny sprites
   const shinySprite3D = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/${id}.png`;
   const shinyOfficialArt = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/${id}.png`;
   const shinyStaticUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${id}.png`;

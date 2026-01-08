@@ -1,9 +1,3 @@
-/**
- * Fetch Pokémon data from the PokeAPI by name or ID.
- * @param {string|number} nameOrId - The Pokémon name or ID.
- * @returns {Promise<Object>} The Pokémon data object.
- * @throws {Error} If the fetch fails or the Pokémon is not found.
- */
 export async function getPokemon(nameOrId) {
   const url = `https://pokeapi.co/api/v2/pokemon/${encodeURIComponent(nameOrId)}`;
   try {
@@ -17,10 +11,90 @@ export async function getPokemon(nameOrId) {
   }
 }
 
-/**
- * Mega Evolution mappings - Pokemon that can Mega Evolve
- * Maps base Pokemon name to their Mega form names in PokeAPI
- */
+export const excludedPatterns = [
+  '-mega',
+  '-gmax',
+  '-totem',
+  '-starter',
+  '-cosplay',
+  '-cap',
+  '-original-cap',
+  '-hoenn-cap',
+  '-sinnoh-cap',
+  '-unova-cap',
+  '-kalos-cap',
+  '-alola-cap',
+  '-partner-cap',
+  '-world-cap',
+  '-rock-star',
+  '-belle',
+  '-pop-star',
+  '-phd',
+  '-libre',
+  '-busted',
+  '-hangry',
+  '-eternamax',
+  '-crowned',
+  '-ice-rider',
+  '-shadow-rider',
+  '-bloodmoon',
+  '-roaming',
+  '-combat',
+  '-blaze',
+  '-aqua',
+  '-low-key',
+  '-noice',
+  '-antique',
+  '-family-of-three',
+  '-family-of-four',
+  '-three-segment',
+  '-two-segment',
+  '-stretchy',
+  '-droopy',
+  '-curly',
+  '-zero',
+  '-hero',
+  '-artisan',
+  '-matron',
+  '-ordinary',
+  '-resolute',
+  '-aria',
+  '-pirouette',
+  '-therian',
+  '-black',
+  '-white',
+  '-school',
+  '-meteor',
+  '-ash',
+  '-core',
+  '-complete',
+  '-10',
+  '-50',
+  '-primal',
+  '-origin',
+  '-sky',
+  '-ultra',
+  '-dusk-mane',
+  '-dawn-wings',
+  '-gulping',
+  '-gorging',
+  '-rapid-strike',
+  '-single-strike',
+  '-dada',
+  '-wellspring',
+  '-hearthflame',
+  '-cornerstone',
+  '-teal',
+  '-small',
+  '-large',
+  '-super',
+];
+
+export function shouldFilterPokemon(name) {
+  const lowerName = name.toLowerCase();
+  return excludedPatterns.some(pattern => lowerName.includes(pattern));
+}
+
 export const megaEvolutions = {
   'venusaur': ['venusaur-mega'],
   'charizard': ['charizard-mega-x', 'charizard-mega-y'],
@@ -70,21 +144,58 @@ export const megaEvolutions = {
   'diancie': ['diancie-mega'],
 };
 
-/**
- * Check if a Pokemon can Mega Evolve
- * @param {string} name - The Pokemon name
- * @returns {string[]|null} Array of mega form names or null
- */
+export const gigantamaxEvolutions = {
+  'charizard': ['charizard-gmax'],
+  'butterfree': ['butterfree-gmax'],
+  'pikachu': ['pikachu-gmax'],
+  'meowth': ['meowth-gmax'],
+  'machamp': ['machamp-gmax'],
+  'gengar': ['gengar-gmax'],
+  'kingler': ['kingler-gmax'],
+  'lapras': ['lapras-gmax'],
+  'eevee': ['eevee-gmax'],
+  'snorlax': ['snorlax-gmax'],
+  'garbodor': ['garbodor-gmax'],
+  'melmetal': ['melmetal-gmax'],
+  'rillaboom': ['rillaboom-gmax'],
+  'cinderace': ['cinderace-gmax'],
+  'inteleon': ['inteleon-gmax'],
+  'corviknight': ['corviknight-gmax'],
+  'orbeetle': ['orbeetle-gmax'],
+  'drednaw': ['drednaw-gmax'],
+  'coalossal': ['coalossal-gmax'],
+  'flapple': ['flapple-gmax'],
+  'appletun': ['appletun-gmax'],
+  'sandaconda': ['sandaconda-gmax'],
+  'toxtricity': ['toxtricity-amped-gmax', 'toxtricity-low-key-gmax'],
+  'centiskorch': ['centiskorch-gmax'],
+  'hatterene': ['hatterene-gmax'],
+  'grimmsnarl': ['grimmsnarl-gmax'],
+  'alcremie': ['alcremie-gmax'],
+  'copperajah': ['copperajah-gmax'],
+  'duraludon': ['duraludon-gmax'],
+  'urshifu': ['urshifu-single-strike-gmax', 'urshifu-rapid-strike-gmax'],
+  'venusaur': ['venusaur-gmax'],
+  'blastoise': ['blastoise-gmax'],
+};
+
 export function getMegaForms(name) {
   const baseName = name.toLowerCase().split('-')[0];
   return megaEvolutions[baseName] || null;
 }
 
-/**
- * Fetch Mega Evolution data for a Pokemon
- * @param {string} megaFormName - The mega form name (e.g., 'charizard-mega-x')
- * @returns {Promise<Object|null>} The mega form data or null if not found
- */
+export function getGmaxForms(name) {
+  const baseName = name.toLowerCase().split('-')[0];
+  return gigantamaxEvolutions[baseName] || null;
+}
+
+export function getAllSpecialForms(name) {
+  return {
+    mega: getMegaForms(name),
+    gmax: getGmaxForms(name),
+  };
+}
+
 export async function getMegaEvolutionData(megaFormName) {
   try {
     const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${megaFormName}`);
@@ -95,11 +206,16 @@ export async function getMegaEvolutionData(megaFormName) {
   }
 }
 
-/**
- * Get display name for a mega form
- * @param {string} megaFormName - The API form name
- * @returns {string} Human readable name
- */
+export async function getGmaxEvolutionData(gmaxFormName) {
+  try {
+    const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${gmaxFormName}`);
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
 export function getMegaDisplayName(megaFormName) {
   if (megaFormName.includes('-mega-x')) {
     return 'Mega X';
@@ -109,4 +225,19 @@ export function getMegaDisplayName(megaFormName) {
     return 'Mega';
   }
   return megaFormName;
+}
+
+export function getGmaxDisplayName(gmaxFormName) {
+  if (gmaxFormName.includes('-amped-gmax')) {
+    return 'G-Max (Amped)';
+  } else if (gmaxFormName.includes('-low-key-gmax')) {
+    return 'G-Max (Low Key)';
+  } else if (gmaxFormName.includes('-single-strike-gmax')) {
+    return 'G-Max (Single Strike)';
+  } else if (gmaxFormName.includes('-rapid-strike-gmax')) {
+    return 'G-Max (Rapid Strike)';
+  } else if (gmaxFormName.includes('-gmax')) {
+    return 'Gigantamax';
+  }
+  return gmaxFormName;
 }

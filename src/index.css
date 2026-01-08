@@ -22,10 +22,8 @@
 
 * { box-sizing: border-box; }
 
-/* Allow page to grow beyond viewport so background covers full height */
 html, body, #root { min-height: 100%; }
 
-/* Remove background from html to avoid duplication and coverage gaps */
 html { background: #0f172a; }
 
 body {
@@ -34,7 +32,6 @@ body {
   min-height: 100vh;
   display: grid;
   place-items: start center;
-  /* Ensure the image covers the entire page height and scrolls with content */
   background-image: linear-gradient(rgba(15,23,42,0.55), rgba(15,23,42,0.75)), url('/img/pokemon-background4.jpg');
   background-position: center;
   background-size: cover;

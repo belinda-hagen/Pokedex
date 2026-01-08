@@ -22,7 +22,7 @@
   justify-content: center;
   position: relative;
   overflow: hidden;
-  transform: translateZ(0); /* Force hardware acceleration and proper positioning */
+  transform: translateZ(0);
 }
 
 .music-player-icon::before {
