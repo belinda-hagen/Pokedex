@@ -2,9 +2,8 @@
 
 <img src="pokedex-banner-new.png" width="100%" />
 
-# 🎒 Pokédex — React Edition 🎒
 
-*A fan-made, interactive Pokédex built with love, curiosity, and a sprinkle of nostalgia.*  
+<br>A fan-made, interactive Pokédex built with love, curiosity, and a sprinkle of nostalgia.</br>
 Explore Pokémon, view stats, discover typings, and relive the magic — right in your browser!
 
 </div>
