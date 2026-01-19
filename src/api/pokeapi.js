@@ -84,6 +84,14 @@ export const excludedPatterns = [
   '-small',
   '-large',
   '-super',
+  '-gliding-build',
+  '-low-power-mode',
+  '-drive-mode',
+  '-aquatic-mode',
+  '-sprinting-build',
+  '-swimming-build',
+  '-limited-build',
+  '-glide-mode',
 ];
 
 export function shouldFilterPokemon(name) {
