@@ -844,6 +844,44 @@ html, body, #root {
   box-shadow: 0 4px 20px rgba(239, 68, 68, 0.5);
 }
 
+/* Zygarde forms styles */
+.mega-form-btn.zygarde {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+}
+
+.mega-form-btn.zygarde:hover {
+  background: linear-gradient(135deg, #dcfce7, #d1fae5);
+  border-color: rgba(34, 197, 94, 0.6);
+}
+
+.mega-form-btn.zygarde.active {
+  background: linear-gradient(135deg, #22c55e, #10b981);
+  border-color: transparent;
+  box-shadow: 0 4px 20px rgba(34, 197, 94, 0.5);
+}
+
+.modal-card.zygarde-active {
+  background: linear-gradient(135deg, rgba(240, 253, 244, 0.95), rgba(236, 253, 245, 0.95));
+}
+
+.modal-card.zygarde-active::before {
+  background: radial-gradient(circle at 50% 40%, rgba(34, 197, 94, 0.2), transparent 60%);
+}
+
+.modal-sprite.zygarde-sprite {
+  filter: drop-shadow(0 0 12px rgba(34, 197, 94, 0.4)) drop-shadow(0 0 20px rgba(16, 185, 129, 0.25));
+}
+
+.zygarde-hero {
+  background: radial-gradient(circle at center, rgba(34, 197, 94, 0.15), transparent 70%);
+}
+
+.mega-badge.zygarde-badge {
+  background: linear-gradient(135deg, #22c55e, #10b981);
+  box-shadow: 0 2px 12px rgba(34, 197, 94, 0.4);
+}
+
 .type-filter-container {
   display: flex;
   flex-wrap: wrap;

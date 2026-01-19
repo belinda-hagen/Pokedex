@@ -66,10 +66,6 @@ export const excludedPatterns = [
   '-school',
   '-meteor',
   '-ash',
-  '-core',
-  '-complete',
-  '-10',
-  '-50',
   '-primal',
   '-origin',
   '-sky',
@@ -240,4 +236,41 @@ export function getGmaxDisplayName(gmaxFormName) {
     return 'Gigantamax';
   }
   return gmaxFormName;
+}
+
+// Zygarde special forms
+export const zygardeFormsMap = {
+  'zygarde': ['zygarde-10', 'zygarde-50', 'zygarde-complete']
+};
+
+export function getZygardeForms(name) {
+  const baseName = name.toLowerCase().split('-')[0];
+  return zygardeFormsMap[baseName] || null;
+}
+
+export async function getZygardeFormData(formName) {
+  try {
+    const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${formName}`);
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+export function getZygardeDisplayName(formName) {
+  if (formName === 'zygarde-10') {
+    return '10% Forme';
+  } else if (formName === 'zygarde-50') {
+    return '50% Forme';
+  } else if (formName === 'zygarde-complete') {
+    return 'Complete Forme';
+  }
+  return formName;
+}
+
+// Check if a pokemon is a Zygarde variant (not the base form for display)
+export function isZygardeVariant(name) {
+  const lowerName = name.toLowerCase();
+  return lowerName === 'zygarde-10' || lowerName === 'zygarde-complete' || lowerName === 'zygarde-10-power-construct' || lowerName === 'zygarde-50-power-construct';
 }

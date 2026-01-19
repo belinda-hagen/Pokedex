@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getPokemon, getMegaForms, getMegaEvolutionData, getMegaDisplayName, getGmaxForms, getGmaxEvolutionData, getGmaxDisplayName, shouldFilterPokemon } from './api/pokeapi';
+import { getPokemon, getMegaForms, getMegaEvolutionData, getMegaDisplayName, getGmaxForms, getGmaxEvolutionData, getGmaxDisplayName, shouldFilterPokemon, getZygardeForms, getZygardeFormData, getZygardeDisplayName, isZygardeVariant } from './api/pokeapi';
 import './components/PokeDex.css';
 import './components/Footer.css';
 import './components/MusicPlayer.css';
@@ -20,17 +20,19 @@ function App() {
   const perPage = 60; 
   const [splashLoader, setSplashLoader] = useState(true);
   const [isMainCardHovered, setIsMainCardHovered] = useState(false);
-  const [suggestions, setSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [searchFilter, setSearchFilter] = useState("");
   
   const [megaForms, setMegaForms] = useState([]);
   const [megaData, setMegaData] = useState({});
   const [gmaxForms, setGmaxForms] = useState([]);
   const [gmaxData, setGmaxData] = useState({});
+  const [zygardeForms, setZygardeForms] = useState([]);
+  const [zygardeData, setZygardeData] = useState({});
   const [selectedForm, setSelectedForm] = useState('base');
   const [loadingMega, setLoadingMega] = useState(false);
   const [loadingGmax, setLoadingGmax] = useState(false);
+  const [loadingZygarde, setLoadingZygarde] = useState(false);
   const [megaDimensionMode, setMegaDimensionMode] = useState(false);
 
   useEffect(() => {
@@ -39,6 +41,8 @@ function App() {
       setMegaData({});
       setGmaxForms([]);
       setGmaxData({});
+      setZygardeForms([]);
+      setZygardeData({});
       setSelectedForm('base');
       return;
     }
@@ -83,6 +87,28 @@ function App() {
     } else {
       setGmaxForms([]);
       setGmaxData({});
+    }
+    
+    // Handle Zygarde forms
+    const zygardes = getZygardeForms(pokemon.name);
+    if (zygardes) {
+      setZygardeForms(zygardes);
+      const fetchZygardeData = async () => {
+        setLoadingZygarde(true);
+        const dataMap = {};
+        for (const formName of zygardes) {
+          const data = await getZygardeFormData(formName);
+          if (data) {
+            dataMap[formName] = data;
+          }
+        }
+        setZygardeData(dataMap);
+        setLoadingZygarde(false);
+      };
+      fetchZygardeData();
+    } else {
+      setZygardeForms([]);
+      setZygardeData({});
     }
     
     setSelectedForm('base');
@@ -147,36 +173,11 @@ function App() {
   const handleInput = (e) => {
     const value = e.target.value;
     setSearch(value);
+    setSearchFilter(value.trim().toLowerCase());
+    if (value.trim() === "") {
+      setPage(0); // Reset to first page when search is cleared
+    }
     if (error) setError("");
-    
-    if (value.trim().length >= 2) {
-      const filtered = allPokemons
-        .filter(poke => !shouldFilterPokemon(poke.name))
-        .filter(poke => poke.name.toLowerCase().includes(value.toLowerCase()))
-        .slice(0, 8);
-      setSuggestions(filtered);
-      setShowSuggestions(filtered.length > 0);
-    } else {
-      setSuggestions([]);
-      setShowSuggestions(false);
-    }
-  };
-
-  const handleSuggestionClick = async (pokeName) => {
-    setShowSuggestions(false);
-    setSearch("");
-    setSuggestions([]);
-    setLoading(true);
-    setError("");
-    try {
-      const data = await getPokemon(pokeName);
-      setPokemon(data);
-      setShowInfo(true);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleSearch = async () => {
@@ -272,31 +273,7 @@ function App() {
               value={search}
               onChange={handleInput}
               onKeyDown={handleKeyDown}
-              onFocus={() => search.trim().length >= 2 && suggestions.length > 0 && setShowSuggestions(true)}
-              onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
             />
-            {showSuggestions && suggestions.length > 0 && (
-              <ul className="search-suggestions">
-                {suggestions.map((poke) => {
-                  const id = poke.url.split('/').filter(Boolean).pop();
-                  return (
-                    <li 
-                      key={poke.name} 
-                      onClick={() => handleSuggestionClick(poke.name)}
-                      className="suggestion-item"
-                    >
-                      <img 
-                        src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`}
-                        alt={poke.name}
-                        className="suggestion-sprite"
-                      />
-                      <span style={{ textTransform: 'capitalize' }}>{poke.name.replace(/-/g, ' ')}</span>
-                      <span className="suggestion-id">#{id}</span>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
           </div>
           <button onClick={handleSearch}>Search</button>
         </div>
@@ -305,8 +282,17 @@ function App() {
       <div className={`pokemon-grid ${megaDimensionMode ? 'mega-dimension' : ''}`}>
         {loading && <div>Loading...</div>}
         {error && (search || pokemon) && <div style={{ color: 'red' }}>{error}</div>}
-        {!search && !pokemon && (() => {
-          let filteredPokemons = allPokemons.filter(poke => !shouldFilterPokemon(poke.name));
+        {!pokemon && (() => {
+          let filteredPokemons = allPokemons
+            .filter(poke => !shouldFilterPokemon(poke.name))
+            .filter(poke => !isZygardeVariant(poke.name));
+          
+          // Apply live search filter
+          if (searchFilter) {
+            filteredPokemons = filteredPokemons.filter(poke => 
+              poke.name.toLowerCase().includes(searchFilter)
+            );
+          }
           
           return (
           <>
@@ -453,18 +439,22 @@ function App() {
       {showInfo && pokemon && (() => {
         const isMegaForm = megaForms.includes(selectedForm);
         const isGmaxForm = gmaxForms.includes(selectedForm);
+        const isZygardeForm = zygardeForms.includes(selectedForm);
         let displayPokemon = pokemon;
         if (isMegaForm && megaData[selectedForm]) {
           displayPokemon = megaData[selectedForm];
         } else if (isGmaxForm && gmaxData[selectedForm]) {
           displayPokemon = gmaxData[selectedForm];
+        } else if (isZygardeForm && zygardeData[selectedForm]) {
+          displayPokemon = zygardeData[selectedForm];
         }
         const primaryType = displayPokemon.types[0]?.type?.name;
         const typeColor = typeColors[primaryType] || '#be1c1c';
         const pct = (n) => `${Math.min(100, Math.round((n / 200) * 100))}%`;
         const hasMegaEvolutions = megaForms.length > 0;
         const hasGmaxEvolutions = gmaxForms.length > 0;
-        const hasSpecialForms = hasMegaEvolutions || hasGmaxEvolutions;
+        const hasZygardeForms = zygardeForms.length > 0;
+        const hasSpecialForms = hasMegaEvolutions || hasGmaxEvolutions || hasZygardeForms;
         
         let displayName = pokemon.name;
         let badgeText = null;
@@ -474,12 +464,15 @@ function App() {
         } else if (isGmaxForm) {
           displayName = displayPokemon.name.replace(/-gmax/gi, ' (G-Max)').replace(/-/g, ' ');
           badgeText = 'G-MAX';
+        } else if (isZygardeForm) {
+          displayName = 'Zygarde ' + getZygardeDisplayName(selectedForm);
+          badgeText = 'FORME';
         }
         
         return (
           <div className="modal-overlay" onClick={handleCloseInfo}>
             <div
-              className={`modal-card enhanced ${selectedForm !== 'base' ? (isGmaxForm ? 'gmax-active' : 'mega-active') : ''}`}
+              className={`modal-card enhanced ${selectedForm !== 'base' ? (isGmaxForm ? 'gmax-active' : isZygardeForm ? 'zygarde-active' : 'mega-active') : ''}`}
               style={{ border: `4px solid ${typeColor}`, '--type-color': typeColor }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -491,16 +484,16 @@ function App() {
               </div>
 
               <div className="modal-header">
-                <div className={`modal-hero ${isMegaForm ? 'mega-hero' : ''} ${isGmaxForm ? 'gmax-hero' : ''}`}>
+                <div className={`modal-hero ${isMegaForm ? 'mega-hero' : ''} ${isGmaxForm ? 'gmax-hero' : ''} ${isZygardeForm ? 'zygarde-hero' : ''}`}>
                   <img
                     src={displayPokemon.sprites?.other?.home?.front_default || displayPokemon.sprites?.other?.['official-artwork']?.front_default || displayPokemon.sprites?.front_default}
                     alt={displayPokemon.name}
-                    className={`modal-sprite ${isMegaForm ? 'mega-sprite' : ''} ${isGmaxForm ? 'gmax-sprite' : ''}`}
+                    className={`modal-sprite ${isMegaForm ? 'mega-sprite' : ''} ${isGmaxForm ? 'gmax-sprite' : ''} ${isZygardeForm ? 'zygarde-sprite' : ''}`}
                   />
                 </div>
                 <h2 className="modal-title">
                   {displayName}
-                  {badgeText && <span className={`mega-badge ${isGmaxForm ? 'gmax-badge' : ''}`}>{badgeText}</span>}
+                  {badgeText && <span className={`mega-badge ${isGmaxForm ? 'gmax-badge' : ''} ${isZygardeForm ? 'zygarde-badge' : ''}`}>{badgeText}</span>}
                 </h2>
                 <p className="modal-subtitle">No. {pokemon.id}</p>
                 <div className="type-chips">
@@ -546,6 +539,16 @@ function App() {
                         disabled={!gmaxData[formName] && loadingGmax}
                       >
                         {loadingGmax && !gmaxData[formName] ? '...' : getGmaxDisplayName(formName)}
+                      </button>
+                    ))}
+                    {zygardeForms.map(formName => (
+                      <button
+                        key={formName}
+                        className={`mega-form-btn zygarde ${selectedForm === formName ? 'active' : ''}`}
+                        onClick={() => setSelectedForm(formName)}
+                        disabled={!zygardeData[formName] && loadingZygarde}
+                      >
+                        {loadingZygarde && !zygardeData[formName] ? '...' : getZygardeDisplayName(formName)}
                       </button>
                     ))}
                   </div>
