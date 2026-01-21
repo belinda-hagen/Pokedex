@@ -2,8 +2,6 @@
 
 <img src="pokedex-banner-new.png" width="100%" />
 
-<img src="screenshot.PNG" width="80%" alt="Pokédex Screenshot" style="border: 2px solid black;" />
-
 </div>
 
 ## Features
@@ -39,8 +37,12 @@ npm run dev
 
 This project uses [PokeAPI](https://pokeapi.co/) to fetch Pokémon names, artwork, types, stats, and more.
 
+
 ## Disclaimer
 
 This is a personal fan project made for fun and learning.  
 Pokémon and all related content are trademarks of Nintendo, Game Freak, and The Pokémon Company.
 
+## Screenshot
+
+<img src="screenshot.PNG" width="80%" alt="Pokédex Screenshot" style="border: 2px solid black;" />
